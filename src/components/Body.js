@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useContext, Suspense, useMemo } from "react";
 import Shimmer from "./Shimmer";
 import { Link } from "react-router-dom";
@@ -6,16 +5,19 @@ import useOnlineStatus from "../utils/useOnlineStatus";
 import TicTacToe from "./TicTacToe";
 import UserContext from "../utils/UserContext";
 import React, { lazy } from "react";
-const RestaurantCard = lazy(() => import("./RestauranttCard"))
+
+const RestaurantCard = lazy(() => import("./RestauranttCard"));
 
 const Body = () => {
     const [listOfRestaurants, setListOfRestaurants] = useState([]);
-    const [searchText, setSearchText] = useState("");
     const [filteredRestaurant, setFilteredRestaurant] = useState([]);
-    const { loggedInUser, SetUserName } = useContext(UserContext);
+    const [searchText, setSearchText] = useState("");
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const { loggedInUser, SetUserName } = useContext(UserContext);
     const onlineStatus = useOnlineStatus();
-    console.log(listOfRestaurants)
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -33,22 +35,19 @@ const Body = () => {
 
             const json = await response.json();
 
-            // const restaurants =
-            //     json?.data?.cards[1]?.card?.card?.gridElements?.infoWithStyle
-            //         ?.restaurants;
-
             const restaurants =
-  json?.data?.cards
-    ?.map(card => card?.card?.card?.gridElements?.infoWithStyle?.restaurants)
-    ?.find(Boolean) || [];
+                json?.data?.cards
+                    ?.map(
+                        (card) =>
+                            card?.card?.card?.gridElements?.infoWithStyle?.restaurants
+                    )
+                    ?.find(Boolean) || [];
 
             setListOfRestaurants(restaurants);
             setFilteredRestaurant(restaurants);
-        } catch (error) {
-            // console.error("Error fetching data:", error);
-            if(error){
-  return <h1>Failed to load restaurants</h1>
-}
+        } catch (err) {
+            console.error("Error fetching restaurants:", err);
+            setError(err);
         } finally {
             setLoading(false);
         }
@@ -60,15 +59,20 @@ const Body = () => {
         );
     }, [searchText, listOfRestaurants]);
 
-    // Memoize top-rated restaurants filter
     const topRatedRestaurantMemo = useMemo(() => {
         return listOfRestaurants.filter((res) => res.info.avgRating > 4.3);
     }, [listOfRestaurants]);
 
     if (onlineStatus === false) {
         return <TicTacToe />;
-    } else if (loading) {
+    }
+
+    if (loading) {
         return <Shimmer />;
+    }
+
+    if (error) {
+        return <h1>Failed to load restaurants</h1>;
     }
 
     return (
@@ -81,25 +85,20 @@ const Body = () => {
                         className="border border-gray-300 p-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500"
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
-                        placeholder="   Search restaurants "
-                        aria-label="Search restaurants"
+                        placeholder="Search restaurants"
                     />
+
                     <button
                         data-testid="search-button"
                         className="bg-green-300 text-black px-4 py-2 rounded-r-md hover:bg-green-600 transition"
                         onClick={() => {
                             setFilteredRestaurant(filteredRestaurantMemo);
-                        }}>
+                        }}
+                    >
                         Search
                     </button>
-                    {/* <div className="flex items-center">
-                        <label className="mr-2">Change User:</label>
-                        <input
-                            className="border border-gray-300 p-2 rounded-md"
-                            onChange={(e) => SetUserName(e.target.value)}
-                        />
-                    </div> */}
                 </div>
+
                 <div className="flex items-center ml-4">
                     <button
                         className="bg-green-300 px-4 py-2 rounded-md hover:bg-green-600 transition mr-4"
@@ -111,10 +110,14 @@ const Body = () => {
                     </button>
                 </div>
             </div>
+
             <Suspense fallback={<Shimmer />}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {filteredRestaurant.map(restaurant => (
-                        <Link key={restaurant.info.id} to={`/city/delhi/${restaurant.info.id}`}>
+                    {filteredRestaurant.map((restaurant) => (
+                        <Link
+                            key={restaurant.info.id}
+                            to={`/city/delhi/${restaurant.info.id}`}
+                        >
                             <RestaurantCard resData={restaurant} />
                         </Link>
                     ))}
