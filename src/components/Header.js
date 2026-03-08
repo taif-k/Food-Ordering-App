@@ -4,7 +4,7 @@ import { Link } from "react-router-dom"
 import useOnlineStatus from "../utils/useOnlineStatus"
 import UserContext from "../utils/UserContext"
 import { useSelector } from "react-redux"
-import React from "react"
+
 
 
 const Header = ()=>{
@@ -12,7 +12,7 @@ const Header = ()=>{
    const onlineStatus = useOnlineStatus()
    const {loggedInUser} = useContext(UserContext)
 
-   const cartItems = useSelector((store)=>store.cart.items)  // this is sucscribing to a small portion of the store
+   const cartItems = useSelector((store)=>store.cart.items)  // this is subscribing to a small portion of the store
    
   console.log(cartItems)
     return (<div className="flex justify-between bg-green-300 shadow-lg m-2">
